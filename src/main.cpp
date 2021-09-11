@@ -8,7 +8,7 @@ int led = 13;
 void setup()
 {
     Serial.begin(9600);
-    ts.init(2, 3, 4);
+    ts.init(2, 3, 4); //ss res mode
 }
 
 void loop()
