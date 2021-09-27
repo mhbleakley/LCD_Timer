@@ -10,38 +10,32 @@ void LinearButton::init(int pin)
 
 void LinearButton::loop()
 {
-    int button = digitalRead(p);
+    int pressed = !digitalRead(p);
     switch (state)
     {
-    case HI:
-        if (!button)
+    case UNPRESSED:
+        if (pressed)
         {
-            state = LO;
+            state = PRESSED;
             holdTimer.reset();
         }
         break;
-    case LO:
-        if (holdTimer.isExpired())
+    case PRESSED:
+        if (holdTimer.isExpired() && pressed)
         {
-            state = HOLD;
-        }
-        else
-        {
-            state = LO;
-        }
-        if (button)
-        {
-            state = HI;
+            state = HELD;
+        }else if (!pressed){
+            state = UNPRESSED;
         }
         break;
-    case HOLD:
-        if (button)
+    case HELD:
+        if (!pressed)
         {
-            state = HI;
+            state = UNPRESSED;
         }
         break;
     default:
-        state = HI;
+        state = UNPRESSED;
         break;
     }
 }
@@ -49,4 +43,16 @@ void LinearButton::loop()
 int LinearButton::getState()
 {
     return state;
+}
+
+bool LinearButton::isPressed(){
+    return state == PRESSED;
+}
+
+bool LinearButton::isHeld(){
+    return state == HELD;
+}
+
+bool LinearButton::isUnpressed(){
+    return state == UNPRESSED;
 }

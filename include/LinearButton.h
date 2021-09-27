@@ -5,13 +5,16 @@ private:
     int p;
     enum STATE
     {
-        HI,
-        LO,
-        HOLD
+        UNPRESSED,
+        PRESSED,
+        HELD
     } state;
     
 public:
     void init(int pin);
     void loop();
     int getState();
+    bool isUnpressed();
+    bool isPressed();
+    bool isHeld();
 };

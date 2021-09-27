@@ -20,22 +20,6 @@ void TimerStopwatch::init(int startStop, int reset, int mode)
     mDown = false;
 }
 
-void TimerStopwatch::currentMode(bool timer)
-{
-    lcd.setCursor(0, 0);
-    lcd.print("MODE:");
-    lcd.setCursor(11, 0);
-    if (timer)
-        lcd.print("TIMER");
-    else
-    {
-        lcd.setCursor(7, 0);
-        lcd.print("STOPWATCH");
-    }
-    lcd.setCursor(0, 1);
-    lcd.print("TIME:");
-}
-
 void TimerStopwatch::stateMachine()
 {
     STSP.loop();
@@ -44,114 +28,64 @@ void TimerStopwatch::stateMachine()
     switch (state)
     {
     case TIMER:
-        currentMode(true);
-        handleMODE(true);
-        handleSTSP(true);
-        hms(0, 5, 0);
+        checkSTSP(COUNTDOWN);
+        checkMODE(STOPWATCH);
         break;
     case STOPWATCH:
-        currentMode(false);
-        handleMODE(false);
-        handleSTSP(false);
-        hms(0, 0, 0);
+        checkSTSP(COUNTUP);
+        checkMODE(TIMER);
         break;
     case COUNTDOWN:
-        currentMode(true);
-        handleRES(true);
-        handleSTSP(true);
+        checkSTSP(TPAUSE);
+        checkRES(TIMER);
         timer(0, 5, 0);
         break;
     case COUNTUP:
-        currentMode(false);
-        handleRES(false);
-        handleSTSP(false);
+        checkSTSP(SPAUSE);
+        checkRES(STOPWATCH);
         stopwatch();
         break;
     case TPAUSE:
-        currentMode(true);
-        handleRES(true);
-        handleSTSP(true);
+        checkSTSP(COUNTDOWN);
+        checkRES(TIMER);
         break;
     case SPAUSE:
-        currentMode(false);
-        handleRES(false);
-        handleSTSP(false);
-        pause(refMillis);
+        checkSTSP(COUNTUP);
+        checkRES(STOPWATCH);
         break;
     case ALARM:
         break;
-    case TIMEREDIT:
-        break;
     }
 }
 
-void TimerStopwatch::handleSTSP(bool timer)
-{
-    if (STSP.getState() == 1)
-        sDown = true;
-    if (sDown && STSP.getState() == 0)
-    {
-        if (timer)
-        {
-            if (state == COUNTDOWN)
-                state = TPAUSE;
-            else
-                state = COUNTDOWN;
+void TimerStopwatch::checkSTSP(int nextState){
+    if(STSP.isPressed()){
+            sDown = true;
         }
-        else
-        {
-            if (state == COUNTUP)
-            {
-                state = SPAUSE;
-                pauseStart = millis();
-            }
-            else
-            {
-                pauseStop = millis();
-                pauseTime = pauseStop - pauseStart;
-                difference = millis() - pauseTime;
-                state = COUNTUP;
-            }
+        if(STSP.isUnpressed() && sDown){
+            state = nextState;
+            sDown = false;
         }
-        sDown = false;
-        lcd.clear();
-    }
 }
 
-void TimerStopwatch::handleRES(bool timer)
-{
-    if (RES.getState() == 1)
-        rDown = true;
-    if (rDown && RES.getState() == 0)
-    {
-        if (timer)
-            state = TIMER;
-        else
-            state = STOPWATCH;
-        rDown = false;
-        lcd.clear();
-    }
+void TimerStopwatch::checkRES(int nextState){
+    if(RES.isPressed()){
+            rDown = true;
+        }
+        if(RES.isUnpressed() && rDown){
+            state = nextState;
+            rDown = false;
+        }
 }
 
-void TimerStopwatch::handleMODE(bool timer)
-{
-    if (MODE.getState() == 1)
-        mDown = true;
-    if (MODE.getState() == 2 && timer)
-    {
-        state = TIMEREDIT;
-        mDown = false;
-        lcd.clear();
-    }
-    if (mDown && MODE.getState() == 0)
-    {
-        if (timer)
-            state = STOPWATCH;
-        else
-            state = TIMER;
-        mDown = false;
-        lcd.clear();
-    }
+void TimerStopwatch::checkMODE(int nextState){
+    if(MODE.isPressed()){
+            mDown = true;
+        }
+        if(MODE.isUnpressed() && mDown){
+            state = nextState;
+            mDown = false;
+        }
 }
 
 void TimerStopwatch::stopwatch()
@@ -242,5 +176,20 @@ void TimerStopwatch::cycle(int interval)
         lcd.setCursor(16 - i, 1);
         lcd.print((char)255);
         delay(interval);
+    }
+}
+
+void TimerStopwatch::loop(){
+    stateMachine();
+    lcd.setCursor(0, 0);
+    lcd.print("MODE:");
+    lcd.setCursor(0, 1);
+    lcd.print("TIME:");
+    if(state == TIMER||state == COUNTDOWN||state == TPAUSE){
+        lcd.setCursor(11, 0);
+        lcd.print("TIMER");
+    }else if (state == STOPWATCH||state == COUNTUP||state == SPAUSE){
+        lcd.setCursor(7, 0);
+        lcd.print("STOPWATCH");
     }
 }

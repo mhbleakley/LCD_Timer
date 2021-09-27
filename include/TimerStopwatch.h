@@ -21,22 +21,21 @@ private:
         COUNTUP,
         TPAUSE,
         SPAUSE,
-        ALARM,
-        TIMEREDIT
+        ALARM
     } state;
+    
 
 public:
     void init(int startStop, int reset, int mode);
-    void currentMode(bool timer);
-    void handleSTSP(bool timer);
-    void handleRES(bool timer);
-    void handleMODE(bool timer);
     void stateMachine();
+    void checkSTSP(int nextState);
+    void checkRES(int nextState);
+    void checkMODE(int nextState);
     void stopwatch();
     void pause(unsigned long t);
     void timer(int h, int m, int s);
     void hms(int h, int m, int s);
     void flash(int interval);
     void cycle(int interval);
-
+    void loop();
 };
