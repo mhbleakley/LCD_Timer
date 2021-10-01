@@ -28,93 +28,134 @@ void TimerStopwatch::stateMachine()
     switch (state)
     {
     case TIMER:
+        seconds = defaultTimer;
+        hms((seconds / 3600) % 60, (seconds / 60) % 60, seconds % 60);
         checkSTSP(COUNTDOWN);
         checkMODE(STOPWATCH);
         break;
     case STOPWATCH:
+        seconds = -1;
+        hms(0, 0, 0);
         checkSTSP(COUNTUP);
         checkMODE(TIMER);
         break;
     case COUNTDOWN:
+        if (seconds == 0)
+        {
+            state = ALARM;
+            lcd.clear();
+            break;
+        }
+        timer();
         checkSTSP(TPAUSE);
         checkRES(TIMER);
-        timer(0, 5, 0);
         break;
     case COUNTUP:
+        stopwatch();
         checkSTSP(SPAUSE);
         checkRES(STOPWATCH);
-        stopwatch();
         break;
     case TPAUSE:
+        hms((seconds / 3600) % 60, (seconds / 60) % 60, seconds % 60);
         checkSTSP(COUNTDOWN);
         checkRES(TIMER);
         break;
     case SPAUSE:
+        hms((seconds / 3600) % 60, (seconds / 60) % 60, seconds % 60);
         checkSTSP(COUNTUP);
         checkRES(STOPWATCH);
         break;
     case ALARM:
+        for (int i = 0; i < 5; i++)
+        {
+            flash(250);
+        }
+        state = ZERO;
+        break;
+    case ZERO:
+        hms((seconds / 3600) % 60, (seconds / 60) % 60, seconds % 60);
+        checkSTSP(TIMER);
+        checkRES(TIMER);
         break;
     }
 }
 
-void TimerStopwatch::checkSTSP(int nextState){
-    if(STSP.isPressed()){
-            sDown = true;
-        }
-        if(STSP.isUnpressed() && sDown){
-            state = nextState;
-            sDown = false;
-        }
+void TimerStopwatch::checkSTSP(int nextState)
+{
+    if (STSP.isPressed())
+    {
+        sDown = true;
+    }
+    if (STSP.isUnpressed() && sDown)
+    {
+        state = (STATE)nextState;
+        sDown = false;
+        lcd.clear();
+    }
 }
 
-void TimerStopwatch::checkRES(int nextState){
-    if(RES.isPressed()){
-            rDown = true;
-        }
-        if(RES.isUnpressed() && rDown){
-            state = nextState;
-            rDown = false;
-        }
+void TimerStopwatch::checkRES(int nextState)
+{
+    if (RES.isPressed())
+    {
+        rDown = true;
+    }
+    if (RES.isUnpressed() && rDown)
+    {
+        state = (STATE)nextState;
+        rDown = false;
+        lcd.clear();
+    }
 }
 
-void TimerStopwatch::checkMODE(int nextState){
-    if(MODE.isPressed()){
-            mDown = true;
-        }
-        if(MODE.isUnpressed() && mDown){
-            state = nextState;
-            mDown = false;
-        }
+void TimerStopwatch::checkMODE(int nextState)
+{
+    if (MODE.isPressed())
+    {
+        mDown = true;
+    }
+    if (MODE.isUnpressed() && mDown)
+    {
+        state = (STATE)nextState;
+        mDown = false;
+        lcd.clear();
+    }
 }
 
 void TimerStopwatch::stopwatch()
 {
     lcd.setCursor(8, 1);
-    unsigned long currentMillis = millis() - difference;
-    refMillis = currentMillis;
-    unsigned long seconds = currentMillis / 1000;
-    unsigned long minutes = seconds / 60;
+    now = millis();
+    if (now - then > 1000)
+    {
+        seconds++;
+        then = millis();
+    }
+    unsigned long displaySeconds = seconds;
+    unsigned long minutes = displaySeconds / 60;
     unsigned long hours = minutes / 60;
-    currentMillis %= 1000;
-    seconds %= 60;
+    displaySeconds %= 60;
     minutes %= 60;
     hours %= 24;
-    hms(hours, minutes, seconds);
+    hms(hours, minutes, displaySeconds);
 }
 
-void TimerStopwatch::timer(int h, int m, int s)
+void TimerStopwatch::timer()
 {
     lcd.setCursor(8, 1);
-    unsigned long currentMillis = millis();
-    unsigned long seconds = currentMillis / 1000;
-    unsigned long minutes = seconds / 60;
+    now = millis();
+    if (now - then > 1000)
+    {
+        seconds--;
+        then = millis();
+    }
+    unsigned long displaySeconds = seconds;
+    unsigned long minutes = displaySeconds / 60;
     unsigned long hours = minutes / 60;
-    currentMillis %= 1000;
-    seconds %= 60;
+    displaySeconds %= 60;
     minutes %= 60;
     hours %= 24;
-    hms(hours, minutes, seconds);
+    hms(hours, minutes, displaySeconds);
 }
 
 void TimerStopwatch::pause(unsigned long t)
@@ -179,17 +220,22 @@ void TimerStopwatch::cycle(int interval)
     }
 }
 
-void TimerStopwatch::loop(){
+void TimerStopwatch::loop()
+{
     stateMachine();
     lcd.setCursor(0, 0);
     lcd.print("MODE:");
     lcd.setCursor(0, 1);
     lcd.print("TIME:");
-    if(state == TIMER||state == COUNTDOWN||state == TPAUSE){
+    if (state == TIMER || state == COUNTDOWN || state == TPAUSE || state == ZERO)
+    {
         lcd.setCursor(11, 0);
         lcd.print("TIMER");
-    }else if (state == STOPWATCH||state == COUNTUP||state == SPAUSE){
+    }
+    else if (state == STOPWATCH || state == COUNTUP || state == SPAUSE)
+    {
         lcd.setCursor(7, 0);
         lcd.print("STOPWATCH");
     }
+    Serial.println(seconds);
 }

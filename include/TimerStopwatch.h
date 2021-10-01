@@ -7,11 +7,10 @@ class TimerStopwatch
 {
 private:
     LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 16, 2);
-    unsigned long refMillis;
-    unsigned long difference;
-    unsigned long pauseStart;
-    unsigned long pauseStop;
-    unsigned long pauseTime;
+    unsigned long now;
+    unsigned long then;
+    long seconds;
+    long defaultTimer = 60;
     bool sDown, rDown, mDown;
     enum STATE
     {
@@ -21,7 +20,8 @@ private:
         COUNTUP,
         TPAUSE,
         SPAUSE,
-        ALARM
+        ALARM,
+        ZERO
     } state;
     
 
@@ -32,8 +32,8 @@ public:
     void checkRES(int nextState);
     void checkMODE(int nextState);
     void stopwatch();
+    void timer();
     void pause(unsigned long t);
-    void timer(int h, int m, int s);
     void hms(int h, int m, int s);
     void flash(int interval);
     void cycle(int interval);
